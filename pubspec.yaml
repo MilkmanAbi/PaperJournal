@@ -1,0 +1,83 @@
+name: paper_journal
+description: "PaperJournal - workplace booking and scheduling app. ET0529 MAD Assessment."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Firebase - two projects wired in firebase_service.dart
+  # public project:  community messages, user bookings, profile sync
+  # private project: admin org users, login records
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    # App icon used on splash screen
+    - assets/AppIcon/PaperJournal.png
+    - assets/AppIcon/AmberJournal.png
+
+    # Wallpapers
+    - assets/wallpapers/Lile-Waves/Lile-00.jpg
+    - assets/wallpapers/Lile-Waves/Lile-01.jpg
+    - assets/wallpapers/Lile-Waves/Lile-02.jpg
+    - assets/wallpapers/Lile-Waves/Lile-03.jpg
+    - assets/wallpapers/Undefined/Lonely-Cosmos.jpg
+
+    # Extras (empty state illustration)
+    - assets/Extras/empty_state.svg
+
+    # SVG icons
+    - assets/icons/icon_add.svg
+    - assets/icons/icon_alert.svg
+    - assets/icons/icon_back.svg
+    - assets/icons/icon_calendar.svg
+    - assets/icons/icon_calendar_check.svg
+    - assets/icons/icon_calendar_days.svg
+    - assets/icons/icon_camera.svg
+    - assets/icons/icon_chat.svg
+    - assets/icons/icon_check.svg
+    - assets/icons/icon_check_circle.svg
+    - assets/icons/icon_chevron_down.svg
+    - assets/icons/icon_chevron_right.svg
+    - assets/icons/icon_clock.svg
+    - assets/icons/icon_close.svg
+    - assets/icons/icon_delete.svg
+    - assets/icons/icon_edit.svg
+    - assets/icons/icon_email.svg
+    - assets/icons/icon_eye.svg
+    - assets/icons/icon_eye_off.svg
+    - assets/icons/icon_favorite.svg
+    - assets/icons/icon_filter.svg
+    - assets/icons/icon_home.svg
+    - assets/icons/icon_image.svg
+    - assets/icons/icon_info.svg
+    - assets/icons/icon_location.svg
+    - assets/icons/icon_lock.svg
+    - assets/icons/icon_logout.svg
+    - assets/icons/icon_notification.svg
+    - assets/icons/icon_payment.svg
+    - assets/icons/icon_phone.svg
+    - assets/icons/icon_search.svg
+    - assets/icons/icon_settings.svg
+    - assets/icons/icon_share.svg
+    - assets/icons/icon_star.svg
+    - assets/icons/icon_ticket.svg
+    - assets/icons/icon_user.svg
+    - assets/icons/icon_users.svg

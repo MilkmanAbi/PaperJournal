@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "40874877867",
+    "project_id": "paperjournal-private",
+    "storage_bucket": "paperjournal-private.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40874877867:android:611458064e09d72856a8ee",
+        "android_client_info": {
+          "package_name": "com.paperjournal.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "40874877867-8rvb5l3g92l2fla4ohvmfn2pnh63dq2h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEiaTlvV9nu-WJnzuxIRFVuBYoTxli5aQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "40874877867-8rvb5l3g92l2fla4ohvmfn2pnh63dq2h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
