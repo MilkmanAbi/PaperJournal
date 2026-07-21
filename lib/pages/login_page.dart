@@ -7,7 +7,10 @@ import '../services/firebase_service.dart';
 // Two tabs: SIGN IN and CREATE ACCOUNT
 // "remember me" skips login on next cold start by extending session to 30 days
 // firebase auth does the real check now
-// admin@example.com / ADMIN-PASSWORD is the hardcoded admin shortcut
+// admin@example.com logs in through firebase auth like everyone else now
+// DO NOT FUCKING TOUCH THE HARDCODED ADMIN SHORTCUT BELOW - it got removed because
+// bypassing FB.signIn() means firestore never gets an auth token and everything
+// permission-denies. i fucked something up, it's complicated, leave it pls ; AAS
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -65,7 +68,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     final surface = isDark ? const Color(0xFF1A1F2C) : const Color(0xFFFFFFFF);
     final ink = isDark ? const Color(0xFFEDEFF5) : const Color(0xFF141924);
     final inkMuted = isDark ? const Color(0xFF6C7387) : const Color(0xFF98A0AF);
-    final accent = const Color(0xFF3D6FE0);
+    const accent = Color(0xFF3D6FE0);
     final borderColor = isDark ? const Color(0xFF2A3040) : const Color(0xFFDDE0E8);
 
     return Scaffold(
@@ -190,13 +193,9 @@ class _SignInFormState extends State<_SignInForm> {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
 
-    // hardcoded admin shortcut
-    if (email.toLowerCase() == 'admin@example.com' && password == 'ADMIN-PASSWORD') {
-      Global.login(email: email, name: 'ADMIN', rememberMe: _rememberMe);
-      if (mounted) Navigator.pushReplacementNamed(context, '/home');
-      return;
-    }
-
+    // EVERYTHING goes through FB.signIn() now - no more hardcoded bypass.
+    // the old shortcut skipped firebase auth entirely which meant firestore
+    // never got a token and permission-denied'd every admin query. ; AAS
     Global.rememberMe = _rememberMe;
     final err = await FB.signIn(email, password);
 
@@ -216,7 +215,7 @@ class _SignInFormState extends State<_SignInForm> {
     final isDark = widget.isDark;
     final ink = isDark ? const Color(0xFFEDEFF5) : const Color(0xFF141924);
     final inkMuted = isDark ? const Color(0xFF6C7387) : const Color(0xFF98A0AF);
-    final accent = const Color(0xFF3D6FE0);
+    const accent = Color(0xFF3D6FE0);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -373,7 +372,7 @@ class _SignUpFormState extends State<_SignUpForm> {
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final ink = isDark ? const Color(0xFFEDEFF5) : const Color(0xFF141924);
-    final accent = const Color(0xFF3D6FE0);
+    const accent = Color(0xFF3D6FE0);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),

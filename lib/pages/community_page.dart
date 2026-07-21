@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../global.dart';
 import '../services/firebase_service.dart';
 
-// CommunityPage - open chat board, real-time via firestore stream now AAS
-// messages come in through FB.communityStream() which is a live snapshot listener
-// so when someone else posts, it just appears - no refresh needed
-// local list (Global.communityMessages) is kept in sync as a fallback
+// community page - the group chat bit
+// hooks into FB.communityStream() which is a live firestore snapshot listener
+// so messages from other users just appear without any refresh needed - yeah its a stream, thats how streams work PSV
+// local list is fallback while stream is connecting or offline. okay, this caches msgs. dude. PSV
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
 
@@ -17,8 +17,6 @@ class _CommunityPageState extends State<CommunityPage> {
   final _msgController = TextEditingController();
   final _scrollController = ScrollController();
 
-  // stream of messages from firestore public db AAS
-  // rebuilds the list widget every time a new message lands
   late final Stream<List<CommunityMessage>> _msgStream;
 
   @override
@@ -40,18 +38,16 @@ class _CommunityPageState extends State<CommunityPage> {
 
     final msg = CommunityMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      authorName: Global.userName ?? 'Unknown',
+      authorName: Global.userName ?? 'ghost user lol',
       authorEmail: Global.userEmail ?? '',
       text: text,
       timestamp: DateTime.now(),
     );
 
     _msgController.clear();
+    await FB.sendMessage(msg); // writes local first then firestore, why tf would you write remote first PSV
 
-    // FB.sendMessage writes local first then firestore - feels instant AAS
-    await FB.sendMessage(msg);
-
-    // scroll to bottom after send
+    // scroll down after posting, bit annoying if its already at the bottom but whatever
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -67,6 +63,7 @@ class _CommunityPageState extends State<CommunityPage> {
     await FB.deleteMessage(id);
   }
 
+  // groups messages by date and inserts separator rows between days. bruh why tf does this need 15 lines PSV
   List<_MsgOrSeparator> _grouped(List<CommunityMessage> messages) {
     final sorted = [...messages]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final result = <_MsgOrSeparator>[];
@@ -92,7 +89,6 @@ class _CommunityPageState extends State<CommunityPage> {
       body: Column(
         children: [
           Expanded(
-            // StreamBuilder hooks into the firestore live feed AAS
             child: StreamBuilder<List<CommunityMessage>>(
               stream: _msgStream,
               builder: (context, snap) {
@@ -100,7 +96,8 @@ class _CommunityPageState extends State<CommunityPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snap.data ?? Global.communityMessages; // fallback to local if stream errors
+                // use firestore data if available, fall back to local. okay, this picks the better source. dude. PSV
+                final messages = snap.data ?? Global.communityMessages;
                 final grouped = _grouped(messages);
 
                 if (grouped.isEmpty) {
@@ -110,7 +107,7 @@ class _CommunityPageState extends State<CommunityPage> {
                       children: [
                         Icon(Icons.forum_outlined, size: 48, color: scheme.outline),
                         const SizedBox(height: 8),
-                        Text('Nothing yet - drop the first message', style: TextStyle(color: scheme.outline)),
+                        Text('Nothing here yet - say something I guess', style: TextStyle(color: scheme.outline)),
                       ],
                     ),
                   );
@@ -144,7 +141,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   Expanded(
                     child: TextField(
                       controller: _msgController,
-                      decoration: const InputDecoration(hintText: 'Say something...', isDense: true),
+                      decoration: const InputDecoration(hintText: 'say something...', isDense: true),
                       onSubmitted: (_) => _sendMessage(),
                       textInputAction: TextInputAction.send,
                       maxLines: null,
@@ -162,6 +159,8 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 }
 
+// little helper union type so the listview can hold either a message or a separator
+// why tf dart doesnt have a built-in discriminated union for this idk PSV
 class _MsgOrSeparator {
   final bool isSeparator;
   final DateTime? date;
@@ -191,8 +190,10 @@ class _DateSeparator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(children: [
         const Expanded(child: Divider()),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(_label(), style: Theme.of(context).textTheme.labelSmall)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(_label(), style: Theme.of(context).textTheme.labelSmall),
+        ),
         const Expanded(child: Divider()),
       ]),
     );
@@ -214,17 +215,27 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onLongPress: onDelete != null ? () => showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Delete message?'),
-            content: const Text('Removes from firestore too, gone for everyone.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              TextButton(onPressed: () { Navigator.pop(context); onDelete!(); }, child: const Text('Delete')),
-            ],
-          ),
-        ) : null,
+        // long press shows delete - bruh why tf would you want to delete your own message
+        // anyway, this does it PSV
+        onLongPress: onDelete != null
+            ? () => showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Delete this?'),
+                    content: const Text('Removes from firestore too, gone for everyone permanently.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          onDelete!();
+                        },
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                )
+            : null,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -236,11 +247,20 @@ class _MessageBubble extends StatelessWidget {
           child: Column(
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              if (!isMe) Text(msg.authorName, style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.primary, fontWeight: FontWeight.bold)),
+              if (!isMe)
+                Text(
+                  msg.authorName,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: scheme.primary, fontWeight: FontWeight.bold),
+                ),
               Text(msg.text),
               const SizedBox(height: 2),
-              Text(timeStr, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline)),
+              Text(
+                timeStr,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline),
+              ),
             ],
           ),
         ),

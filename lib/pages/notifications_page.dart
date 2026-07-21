@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import '../global.dart';
 
-// NotificationsPage - shows upcoming confirmed/pending bookings as reminders.
-// pure derived state from Global.bookings, no extra storage needed.
-// in prod this pairs with FCM push notifications - for now it's just
-// an in-app list so you get the screen count and the UI reads correctly.
+// notifications page - derived from Global.bookings, no extra storage needed
+// okay this just filters a list and sorts it. dude. PSV
+// shows upcoming non-cancelled bookings sorted nearest first - why tf would you want past ones PSV
+// urgency colors: red = less than a day, orange = less than 3 days, normal otherwise
+// bruh this is traffic lights. for a calendar. PSV
+// in prod this would pair with FCM push, for now its just an in-app list
+// okay, future problem. dude. PSV
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
 
-  // only show future bookings that aren't cancelled
   List<_Reminder> _buildReminders() {
     final now = DateTime.now();
     final upcoming = Global.bookings
         .where((b) => b.status != BookingStatus.cancelled && b.dateTime.isAfter(now))
         .toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime)); // nearest first
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     return upcoming.map((b) {
       final diff = b.dateTime.difference(now);
@@ -30,7 +32,6 @@ class NotificationsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
-        // badge count on the title area so it's clear at a glance
         actions: [
           if (reminders.isNotEmpty)
             Padding(
@@ -49,15 +50,9 @@ class NotificationsPage extends StatelessWidget {
                 children: [
                   Icon(Icons.notifications_none, size: 56, color: scheme.outline),
                   const SizedBox(height: 12),
-                  Text(
-                    "You're all clear",
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text("you're all clear", style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  Text(
-                    'No upcoming bookings right now.',
-                    style: TextStyle(color: scheme.outline),
-                  ),
+                  Text('no upcoming bookings', style: TextStyle(color: scheme.outline)),
                 ],
               ),
             )
@@ -75,7 +70,6 @@ class _ReminderCard extends StatelessWidget {
   final _Reminder reminder;
   const _ReminderCard({required this.reminder});
 
-  // human-readable time-until string
   String _timeLabel(Duration diff) {
     if (diff.inMinutes < 60) return 'In ${diff.inMinutes} min';
     if (diff.inHours < 24) return 'In ${diff.inHours}h';
@@ -84,7 +78,6 @@ class _ReminderCard extends StatelessWidget {
     return 'In ${(diff.inDays / 7).floor()} week${diff.inDays >= 14 ? 's' : ''}';
   }
 
-  // urgency color - red if < 1 day, amber if < 3 days, normal otherwise
   Color _urgencyColor(BuildContext context, Duration diff) {
     final scheme = Theme.of(context).colorScheme;
     if (diff.inHours < 24) return scheme.error;
@@ -113,8 +106,7 @@ class _ReminderCard extends StatelessWidget {
         ),
         title: Text(b.serviceName),
         subtitle: Text(
-          '${b.dateTime.day}/${b.dateTime.month}/${b.dateTime.year}'
-          '  -  ${b.status.name}',
+          '${b.dateTime.day}/${b.dateTime.month}/${b.dateTime.year}  -  ${b.status.name}',
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,

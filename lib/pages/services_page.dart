@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-// ServicesPage - browse what's bookable before hitting the booking form.
-// hardcoded list for now, swap with a Firestore collection later.
-// tapping a service navigates to BookingPage with the name pre-filled
-// so you don't have to type it manually.
+// services page - browse what you can book before actually booking it
+// hardcoded list for now - in production this would be a firestore collection MSS
+// tapping book pushes to /booking with the service name pre-filled as a route arg
 class ServicesPage extends StatefulWidget {
   const ServicesPage({super.key});
 
@@ -16,8 +15,7 @@ class _ServicesPageState extends State<ServicesPage> {
   String _query = '';
   String? _selectedCategory;
 
-  // TODO(firebase): pull this from Firestore collection 'services'
-  // for now it's hardcoded - enough to demo the flow
+  // hardcoded service list - swap with firestore services collection when that exists MSS
   static const List<ServiceItem> _allServices = [
     ServiceItem(
       id: 'svc_001',
@@ -94,8 +92,7 @@ class _ServicesPageState extends State<ServicesPage> {
   }
 
   void _bookThis(ServiceItem service) {
-    // push to BookingPage with the service name pre-filled
-    // BookingPage reads the route argument and stuffs it into the text field
+    // passes service name as route argument, BookingPage.didChangeDependencies picks it up MSS
     Navigator.pushNamed(context, '/booking', arguments: service.name);
   }
 
@@ -114,13 +111,12 @@ class _ServicesPageState extends State<ServicesPage> {
       appBar: AppBar(title: const Text('Services')),
       body: Column(
         children: [
-          // search + filter bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search services...',
+                hintText: 'Search...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
@@ -137,7 +133,7 @@ class _ServicesPageState extends State<ServicesPage> {
             ),
           ),
 
-          // category chips
+          // horizontal filter chips for category - one tap narrows the list MSS
           SizedBox(
             height: 48,
             child: ListView(
@@ -170,7 +166,6 @@ class _ServicesPageState extends State<ServicesPage> {
 
           const Divider(height: 1),
 
-          // service list
           Expanded(
             child: filtered.isEmpty
                 ? Center(
@@ -179,7 +174,7 @@ class _ServicesPageState extends State<ServicesPage> {
                       children: [
                         Icon(Icons.search_off, size: 48, color: scheme.outline),
                         const SizedBox(height: 8),
-                        Text('No services match', style: TextStyle(color: scheme.outline)),
+                        Text('nothing matches', style: TextStyle(color: scheme.outline)),
                       ],
                     ),
                   )
@@ -222,7 +217,6 @@ class _ServiceCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // icon badge
             Container(
               width: 44,
               height: 44,
@@ -249,7 +243,6 @@ class _ServiceCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // category chip
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -272,7 +265,6 @@ class _ServiceCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.outline),
                       ),
                       const Spacer(),
-                      // book button
                       FilledButton.tonal(
                         onPressed: onBook,
                         style: FilledButton.styleFrom(
@@ -294,7 +286,7 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-// plain data class - no state, no methods needed beyond this
+// plain data class, stateless by design - services dont change at runtime MSS
 class ServiceItem {
   final String id;
   final String name;
@@ -312,3 +304,5 @@ class ServiceItem {
     required this.icon,
   });
 }
+
+//This page is honest to god, just repetitive filler.

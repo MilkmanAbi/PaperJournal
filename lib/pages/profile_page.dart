@@ -3,9 +3,9 @@ import '../global.dart';
 import '../services/firebase_service.dart';
 
 // ProfilePage - company details + sync button
-// on initState, tries to pull existing profile from firestore to autofill fields
-// on save, writes locally AND syncs to firestore in one go - no separate sync step
-// the big "Sync account" button is still there for manual force-push AAS
+// on initState, tries to pull existing profile from firestore to autofill the fields
+// on save, writes locally and syncs to firestore simultaneously - no extra step needed
+// the big sync button is still there for manual force-push if something drifts ; AAS
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -23,12 +23,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // prefill from whatever is already in Global (loaded from local session)
+    // prefill controllers from whatever is already in Global, loaded from local session
     _companyNameCtrl = TextEditingController(text: Global.companyName ?? '');
     _companyRoleCtrl = TextEditingController(text: Global.companyRole ?? '');
     _companyCodeCtrl = TextEditingController(text: Global.companyCode ?? '');
 
-    // if any field is still empty, try to pull from firestore to autofill AAS
+    // if any field is still empty, pull from firestore to fill it in ; AAS
     if (Global.companyName == null || Global.companyRole == null) {
       _autofillFromFirestore();
     }
@@ -42,8 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  // pull the user doc from public firestore and fill in any blank fields
-  // doesnt overwrite fields the user already has locally AAS
+  // pull the user doc from public firestore and fill in blank fields only
+  // doesnt overwrite anything the user already has locally ; AAS
   Future<void> _autofillFromFirestore() async {
     final email = Global.userEmail;
     if (email == null) return;
@@ -56,7 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (doc.exists) {
         final data = doc.data()!;
-        // only fill in if local is empty - dont clobber what they already typed AAS
+        // only fill in if local is empty - never clobber what they already typed ; AAS
         if ((Global.companyName == null || Global.companyName!.isEmpty) && data['companyName'] != null) {
           Global.companyName = data['companyName'] as String;
           _companyNameCtrl.text = Global.companyName!;
@@ -72,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() {});
       }
     } catch (_) {
-      // firestore offline or doc missing - thats fine, just use whatever is local AAS
+      // firestore offline or doc missing - not fatal, local data is still there ; AAS
     } finally {
       if (mounted) setState(() => _loadingProfile = false);
     }
@@ -84,10 +84,10 @@ class _ProfilePageState extends State<ProfilePage> {
     Global.companyRole = _companyRoleCtrl.text.trim().isEmpty ? null : _companyRoleCtrl.text.trim();
     Global.companyCode = _companyCodeCtrl.text.trim().isEmpty ? null : _companyCodeCtrl.text.trim();
 
-    // stamp session so company details go to disk AAS
+    // stamp session so company details actually persist to disk ; AAS
     Global.login(email: Global.userEmail!, name: Global.userName!, rememberMe: Global.rememberMe);
 
-    // push to firestore in background - dont await, user doesnt need to wait AAS
+    // fire and forget to firestore - user doesnt need to wait for this ; AAS
     FB.syncUserToPublic().then((err) {
       if (err != null) {
         // silent fail - it's saved locally so its not lost, firestore will get it on next sync

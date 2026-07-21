@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../global.dart';
 import '../services/firebase_service.dart';
 
-// AdminPage - only visible when Global.isAdmin is true (set on login with admin@example.com / ADMIN-PASSWORD).
-// normal users never see this tab, it doesn't even exist in their AppShell.
-// Shows all users from public Firestore - anyone who has ever signed up appears here,
-// even if they never filled in their profile. AAS
+// admin page - only admin@example.com ever sees this tab
+// pulls all signed-up users from public firestore and shows their bookings ; AAS
+// the conflict detection is a nested loop which is O(n^2) and will get slow
+// with a lot of users but for an assignment with like 5 users it doesnt matter ; AAS
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
 
@@ -22,10 +22,12 @@ class _AdminPageState extends State<AdminPage> {
   @override
   void initState() {
     super.initState();
-    // auto-load users when admin page opens
+    // auto-load on open so admin doesnt have to tap refresh manually ; AAS
     _refreshUsers();
   }
 
+  // O(n^2) conflict check - same service booked same day by two different users
+  // flags it as a conflict so admin can sort it out ; AAS
   List<ConflictInfo> _findConflicts() {
     final conflicts = <ConflictInfo>[];
     final allBookings = <_UserBooking>[];
@@ -54,9 +56,12 @@ class _AdminPageState extends State<AdminPage> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _refreshUsers() async {
-    setState(() { _loading = true; _loadError = null; });
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
 
-    // Try public DB first (shows ALL signed-up users)
+    // try public db first, fall back to private mirror if that fails ; AAS
     final err = await FB.fetchAllPublicUsers();
 
     if (!mounted) return;
@@ -66,15 +71,12 @@ class _AdminPageState extends State<AdminPage> {
     });
 
     if (err != null) {
-      // fallback: try private db mirror
       final privateErr = await FB.fetchOrgUsers();
       if (mounted) {
-        setState(() {
-          _loadError = privateErr ?? null;
-        });
+        setState(() => _loadError = privateErr);
         if (privateErr == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Loaded ${Global.orgUsers.length} users (from private db fallback)')),
+            SnackBar(content: Text('loaded ${Global.orgUsers.length} users (private db fallback)')),
           );
         }
       }
@@ -93,12 +95,14 @@ class _AdminPageState extends State<AdminPage> {
           if (_loading)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+              child: Center(
+                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
             )
           else
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh users',
+              tooltip: 'Refresh',
               onPressed: _refreshUsers,
             ),
         ],
@@ -109,7 +113,6 @@ class _AdminPageState extends State<AdminPage> {
               padding: const EdgeInsets.all(16),
               children: [
 
-                // error banner
                 if (_loadError != null) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -121,14 +124,19 @@ class _AdminPageState extends State<AdminPage> {
                       children: [
                         Icon(Icons.error_outline, color: scheme.onErrorContainer, size: 16),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(_loadError!, style: TextStyle(color: scheme.onErrorContainer, fontSize: 12))),
+                        Expanded(
+                          child: Text(
+                            _loadError!,
+                            style: TextStyle(color: scheme.onErrorContainer, fontSize: 12),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
                 ],
 
-                // conflicts banner
+                // conflicts banner - shown when two people booked same thing same day ; AAS
                 if (conflicts.isNotEmpty) ...[
                   Card(
                     color: scheme.errorContainer,
@@ -142,7 +150,7 @@ class _AdminPageState extends State<AdminPage> {
                               Icon(Icons.warning_amber_outlined, color: scheme.onErrorContainer),
                               const SizedBox(width: 8),
                               Text(
-                                '${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''} found',
+                                '${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''}',
                                 style: TextStyle(
                                   color: scheme.onErrorContainer,
                                   fontWeight: FontWeight.bold,
@@ -167,20 +175,19 @@ class _AdminPageState extends State<AdminPage> {
                   const SizedBox(height: 16),
                 ],
 
-                // no conflicts
                 if (conflicts.isEmpty && _users.isNotEmpty) ...[
                   Card(
                     color: scheme.secondaryContainer,
                     child: ListTile(
                       dense: true,
                       leading: Icon(Icons.check_circle_outline, color: scheme.onSecondaryContainer),
-                      title: Text('No booking conflicts', style: TextStyle(color: scheme.onSecondaryContainer)),
+                      title: Text('No conflicts', style: TextStyle(color: scheme.onSecondaryContainer)),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
 
-                // stats row
+                // quick stats row ; AAS
                 if (_users.isNotEmpty) ...[
                   Row(
                     children: [
@@ -210,7 +217,6 @@ class _AdminPageState extends State<AdminPage> {
                   const SizedBox(height: 16),
                 ],
 
-                // user list header
                 Text('All Users (${_users.length})', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
 
@@ -223,7 +229,7 @@ class _AdminPageState extends State<AdminPage> {
                           Icon(Icons.group_outlined, size: 48, color: scheme.outline),
                           const SizedBox(height: 8),
                           Text(
-                            'No users yet.\nNew sign-ups will appear here automatically.',
+                            'nobody here yet\nnew signups show up automatically',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: scheme.outline),
                           ),
@@ -261,10 +267,7 @@ class _StatChip extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(4),
-        ),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -304,8 +307,10 @@ class _UserCard extends StatelessWidget {
           children: [
             Text(user.email, style: TextStyle(fontSize: 11, color: scheme.outline)),
             if (user.companyName != null)
-              Text('${user.companyName}${user.companyRole != null ? ' · ${user.companyRole}' : ''}',
-                style: TextStyle(fontSize: 11, color: scheme.primary)),
+              Text(
+                '${user.companyName}${user.companyRole != null ? ' · ${user.companyRole}' : ''}',
+                style: TextStyle(fontSize: 11, color: scheme.primary),
+              ),
           ],
         ),
         trailing: activeBookings > 0
@@ -315,23 +320,27 @@ class _UserCard extends StatelessWidget {
                   color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text('$activeBookings booking${activeBookings > 1 ? 's' : ''}',
-                  style: TextStyle(fontSize: 10, color: scheme.onPrimaryContainer)),
+                child: Text(
+                  '$activeBookings booking${activeBookings > 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 10, color: scheme.onPrimaryContainer),
+                ),
               )
             : null,
         children: [
-          // profile details row
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (user.companyCode != null)
-                  _InfoRow(icon: Icons.tag, text: 'Org code: ${user.companyCode}', scheme: scheme),
+                  _InfoRow(icon: Icons.tag, text: 'org code: ${user.companyCode}', scheme: scheme),
                 if (user.bookings.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
-                    child: Text('No bookings', style: TextStyle(fontStyle: FontStyle.italic, color: scheme.outline, fontSize: 12)),
+                    child: Text(
+                      'no bookings yet',
+                      style: TextStyle(fontStyle: FontStyle.italic, color: scheme.outline, fontSize: 12),
+                    ),
                   ),
               ],
             ),
@@ -387,6 +396,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+// tiny helper classes for conflict detection ; AAS
 class _UserBooking {
   final OrgUser user;
   final Booking booking;

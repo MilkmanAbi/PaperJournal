@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import '../global.dart';
 import '../theme/amber_theme.dart';
 
-/// CalendarHomePage — replaces the old list-of-cards HomePage. This is
-/// the actual "note taking, booking calendar app" bit: a month grid,
-/// tap a day to see whatever's pinned to it (notes + bookings), add a
-/// note right there. Booking/logout moved out to their own tabs in
-/// AppShell, so this page only has to worry about the calendar.
+// calendar home page - tap a day, see whats on it, add notes
+// booking stuff got moved to its own tab so this page only worries about the calendar grid
+// separation of concerns, okay, this just draws a calendar. dude. PSV
+// month nav is arrow buttons left/right, same pattern as the reference app
 class CalendarHomePage extends StatefulWidget {
   const CalendarHomePage({super.key});
 
@@ -15,9 +14,10 @@ class CalendarHomePage extends StatefulWidget {
 }
 
 class _CalendarHomePageState extends State<CalendarHomePage> {
-  static const _weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // Sun-first, matches the Honor app screenshot
+  // sunday first to match the reference screenshot - no idea why the ref is sunday-first but okay PSV
+  static const _weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  late DateTime _focusedMonth; // always the 1st of whatever month is showing
+  late DateTime _focusedMonth;
   late DateTime _selectedDay;
 
   @override
@@ -34,8 +34,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
 
   int _daysInMonth(DateTime month) => DateTime(month.year, month.month + 1, 0).day;
 
-  // how many empty leading cells before day 1 - Sunday-first grid, so
-  // Monday needs 1 blank, Tuesday 2, etc, and Sunday needs 0.
+  // how many blank cells before day 1 - sunday-first grid so monday needs 1 blank etc
+  // bruh why tf do calendars use such stupid indexing PSV
   int _leadingBlanks(DateTime month) => DateTime(month.year, month.month, 1).weekday % 7;
 
   void _addNote() {
@@ -48,7 +48,7 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
           controller: controller,
           autofocus: true,
           maxLines: 3,
-          decoration: const InputDecoration(hintText: "What's up..."),
+          decoration: const InputDecoration(hintText: "what's up..."),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -78,14 +78,13 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     final leadingBlanks = _leadingBlanks(_focusedMonth);
     final daysInMonth = _daysInMonth(_focusedMonth);
     final today = DateTime.now();
-    final monthLabel = '${_focusedMonth.month}/${_focusedMonth.year}'; // simple, no intl dependency for just this
+    final monthLabel = '${_focusedMonth.month}/${_focusedMonth.year}';
 
     return Scaffold(
       appBar: AppBar(title: Text('Hi, ${Global.userName ?? 'there'}')),
       body: ListView(
         padding: const EdgeInsets.all(AmberSpace.s3),
         children: [
-          // month header, same left/right arrow pattern as the rest of the app
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -94,26 +93,30 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
               IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => _changeMonth(1)),
             ],
           ),
+
           Row(
             children: _weekdayLabels
                 .map((d) => Expanded(
-                      child: Center(
-                        child: Text(d, style: Theme.of(context).textTheme.labelSmall),
-                      ),
+                      child: Center(child: Text(d, style: Theme.of(context).textTheme.labelSmall)),
                     ))
                 .toList(),
           ),
+
           const SizedBox(height: AmberSpace.s2),
+
           GridView.count(
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
               for (int i = 0; i < leadingBlanks; i++) const SizedBox.shrink(),
-              for (int day = 1; day <= daysInMonth; day++) _buildDayCell(context, day, scheme, today),
+              for (int day = 1; day <= daysInMonth; day++)
+                _buildDayCell(context, day, scheme, today),
             ],
           ),
+
           const Divider(height: AmberSpace.s5),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -121,10 +124,16 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 '${_selectedDay.day}/${_selectedDay.month}/${_selectedDay.year}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              TextButton.icon(onPressed: _addNote, icon: const Icon(Icons.add), label: const Text('Add note')),
+              TextButton.icon(
+                onPressed: _addNote,
+                icon: const Icon(Icons.add),
+                label: const Text('Add note'),
+              ),
             ],
           ),
+
           const SizedBox(height: AmberSpace.s2),
+
           ..._buildSelectedDayContent(context),
         ],
       ),
@@ -133,8 +142,12 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
 
   Widget _buildDayCell(BuildContext context, int day, ColorScheme scheme, DateTime today) {
     final cellDate = DateTime(_focusedMonth.year, _focusedMonth.month, day);
-    final selected = cellDate.year == _selectedDay.year && cellDate.month == _selectedDay.month && cellDate.day == _selectedDay.day;
-    final isToday = cellDate.year == today.year && cellDate.month == today.month && cellDate.day == today.day;
+    final selected = cellDate.year == _selectedDay.year &&
+        cellDate.month == _selectedDay.month &&
+        cellDate.day == _selectedDay.day;
+    final isToday = cellDate.year == today.year &&
+        cellDate.month == today.month &&
+        cellDate.day == today.day;
     final hasNote = Global.notesForDay(cellDate).isNotEmpty;
     final hasBooking = Global.bookingsForDay(cellDate).isNotEmpty;
 
@@ -144,7 +157,9 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
       child: Container(
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: selected ? scheme.primary : (isToday ? scheme.surfaceContainerHighest : null),
+          color: selected
+              ? scheme.primary
+              : (isToday ? scheme.surfaceContainerHighest : null),
           borderRadius: AmberRadius.boxRadius,
         ),
         child: Column(
@@ -163,8 +178,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (hasBooking) _dot(AmberColors.dustyBlue), // "has a booking" dot, per the theme file's own comment
-                    if (hasNote) _dot(AmberColors.dustyPlum),
+                    if (hasBooking) _dot(AmberColors.dustyBlue), // blue dot = has a booking PSV
+                    if (hasNote) _dot(AmberColors.dustyPlum),    // plum = has a note
                   ],
                 ),
               ),
@@ -187,10 +202,7 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
 
     if (dayNotes.isEmpty && dayBookings.isEmpty) {
       return [
-        Text(
-          'Nothing pinned to this day yet.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text('nothing pinned to this day yet', style: Theme.of(context).textTheme.bodySmall),
       ];
     }
 

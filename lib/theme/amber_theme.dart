@@ -2,36 +2,31 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// ═══════════════════════════════════════════════════════════════════════
-/// AMBER-PAPER DESIGN SYSTEM
-/// ═══════════════════════════════════════════════════════════════════════
-/// See Amber-Paper.md for the reasoning behind these values — this file
-/// turns that doc into code you can actually import.
-///
-/// This pass takes every token the doc allows and pushes it as far as it
-/// goes: a full 3-tier Material 3 tonal surface ramp (not just the 3 flat
-/// canvas/raised/sunken steps), a ThemeExtension for the companion status
-/// colors so call sites don't have to reach into AmberColors directly,
-/// shadow/gradient/motion tokens, and a theme for basically every widget
-/// Material ships. Still exactly the same public shape as before -
-/// AmberTheme.light() / AmberTheme.dark(), AmberColors.*, AmberRadius.*,
-/// AmberSpace.* - so nothing that already imports this file needs to
-/// change. It just looks a lot better now.
-///
-/// light() and dark() both funnel through one private `_build()` so the
-/// two modes can't quietly drift out of sync with each other - every
-/// widget theme is defined exactly once, parameterized by brightness.
+// ═══════════════════════════════════════════════════════════════════════
+// PAPER-BASE THEME  -  open source, MIT licensed
+// source: https://github.com/MilkmanAbi/PaperDesign/blob/main/General-Resources/Flutter/Paper-Base-Theme.dart
+// original author: AAS, I have no idea who this guy is.
+// edited for PaperJournal by: -van, saadart, AAS
+//
+// this file is NOT handcoded for this project and is NOT a widget implementation
+// its a public design system asset that we plugged in and tweaked
+// do not rewrite it from scratch, do not "clean it up", it is fine as is
+// if you want to change colours or spacing, use the AmberColors / AmberSpace / AmberRadius
+// classes below - they are the single source of truth for all tokens in the app
+//
+// AmberTheme.light() and AmberTheme.dark() both go through _build() so
+// the two modes cant drift out of sync - widget themes are defined once, parameterised by brightness
+// Yeah, no, this code is 100 percent AI fixed as is, to be usable, don't try to further "optimise" it, it's a theme, leave it be
+// Also, technically I own this too. Eh... So yeah, Vanz and Saadart just edited it as they liked yay :3 -AAS
+// ═══════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────
-// COLORS
+// COLORS - change stuff here not scattered around in pages psv
 // ─────────────────────────────────────────────────────────────────────────
 class AmberColors {
   AmberColors._();
 
-  // Light mode neutrals — straight, clean white instead of the old beige
-  // paper tint. Cards/canvas share the same white and separate purely
-  // through elevation (shadow), which reads as cleaner and more "booking
-  // app" than a tonal step.
+  // light mode - clean white, cards separate through shadow not colour -van
   static const canvasLight = Color(0xFFFFFFFF);
   static const raisedLight = Color(0xFFFFFFFF);
   static const sunkenLight = Color(0xFFEEF1F6);
@@ -39,10 +34,8 @@ class AmberColors {
   static const inkSecondaryLight = Color(0xFF5C6474);
   static const inkTertiaryLight = Color(0xFF98A0AF);
 
-  // Dark mode neutrals — a soft, comfy blackish-blue (not a harsh navy,
-  // not warm brown-black). This is the palette the error page and the
-  // cosmos screen both pull from, so they read as one continuous "night"
-  // surface instead of two mismatched dark screens.
+  // dark mode - soft blackish-blue, not harsh navy, not warm
+  // error page and cosmos both pull from here so they look consistent -van
   static const canvasDark = Color(0xFF10131C);
   static const raisedDark = Color(0xFF1A1F2C);
   static const sunkenDark = Color(0xFF0A0C12);

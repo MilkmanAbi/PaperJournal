@@ -1,8 +1,6 @@
-gradle-wrapper.jar
+# Gradle wrapper is intentionally committed (see root .gitignore note).
 /.gradle
 /captures/
-/gradlew
-/gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/
